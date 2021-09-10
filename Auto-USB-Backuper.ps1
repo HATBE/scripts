@@ -1,7 +1,7 @@
 cls
 
 # Define the label
-$label = "Backuper" #label of USB Stick used
+$label = "backup-drive-001" #label of USB Stick used
 # Define the Paths to Backup
 $dir = @(
          @("Pictures", "C:\Users\$Env:Username\Pictures"),
