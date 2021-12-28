@@ -1,7 +1,7 @@
 <?php
+    $user = '<user>';
     $token = '<token>';
     $apiUrl = 'https://api.github.com/';
-    $user = '<user>'
 
      function apiGet($path) {
         global $apiUrl;
@@ -20,23 +20,28 @@
         } else {
             return json_decode($result, true);
         }
-        
+
         curl_close($ch);
     }
 
     $repos = apiGet('users/' . $user . '/repos');
 
     foreach($repos as $key=>$repo) {
-        $reposP[$key]['name'] = $repo['name'];
-        $reposP[$key]['fullName'] = $repo['full_name'];
-        $reposP[$key]['description'] = !empty($repo['description']) ? $repo['description'] : 'leer';
-        $reposP[$key]['created'] = strtotime($repo['created_at']);
-        $reposP[$key]['pushed'] = strtotime($repo['pushed_at']);
-        $reposP[$key]['language'] = $repo['language'];
-        $reposP[$key]['stars'] = $repo['stargazers_count'];
+        $reposP['repos'][$key]['name'] = htmlentities($repo['name'], ENT_QUOTES);
+        $reposP['repos'][$key]['fullName'] = htmlentities($repo['full_name'], ENT_QUOTES);
+        $reposP['repos'][$key]['description'] = !empty($repo['description']) ? htmlentities($repo['description'], ENT_QUOTES) : 'leer';
+        $reposP['repos'][$key]['created'] = htmlentities(strtotime($repo['created_at']), ENT_QUOTES);
+        $reposP['repos'][$key]['pushed'] = htmlentities(strtotime($repo['pushed_at']), ENT_QUOTES);
+        $reposP['repos'][$key]['stars'] = htmlentities($repo['stargazers_count'], ENT_QUOTES);
+        $langs = apiGet('repos/' . $repo['full_name'] . '/languages');
+        foreach($langs as $lang=>$amt) {
+            $reposP['repos'][$key]['languages'][] = htmlentities($lang, ENT_QUOTES);
+        }
     }
+
+    $reposP['updated'] = time();
 
     $json = json_encode($reposP);
 
-    $file = fopen('repos.json', 'w');
+    $file = fopen("repos.json", "w");
     fwrite($file, $json);
