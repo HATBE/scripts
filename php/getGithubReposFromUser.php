@@ -55,8 +55,6 @@
 
     $output['time'] = time();
 
-    print_r($output);
-
     $json = json_encode($output);
 
     $file = fopen(__DIR__ . '/repos.json', 'w');
