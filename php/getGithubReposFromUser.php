@@ -1,47 +1,63 @@
 <?php
+    require_once(__DIR__ . '/../config/auth.php');
+
     $user = '<user>';
-    $token = '<token>';
-    $apiUrl = 'https://api.github.com/';
+    define('GITHUB_USER', '<user>');
+    define('GITHUB_TOKEN', '<token>');
 
-     function apiGet($path) {
-        global $apiUrl;
-        global $token;
-        global $user;
+    $api = 'https://api.github.com/';
+    $orgs = [];
+    $output = [];
 
+    function apiGet($url, $path) {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $apiUrl . $path);
+        curl_setopt($ch, CURLOPT_URL, $url . $path);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-        curl_setopt($ch, CURLOPT_USERPWD, $user . ':' . $token);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0');
+        curl_setopt($ch, CURLOPT_USERPWD, GITHUB_USER . ':' . GITHUB_TOKEN);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.7113.93 Safari/537.36');
         $result = curl_exec($ch);
         if (curl_errno($ch)) {
-            return 'Error:' . curl_error($ch);
+            echo 'Error: ' . curl_error($ch);
+            exit();
         } else {
             return json_decode($result, true);
         }
-
         curl_close($ch);
     }
 
-    $repos = apiGet('users/' . $user . '/repos');
-
-    foreach($repos as $key=>$repo) {
-        $reposP['repos'][$key]['name'] = htmlentities($repo['name'], ENT_QUOTES);
-        $reposP['repos'][$key]['fullName'] = htmlentities($repo['full_name'], ENT_QUOTES);
-        $reposP['repos'][$key]['description'] = !empty($repo['description']) ? htmlentities($repo['description'], ENT_QUOTES) : 'leer';
-        $reposP['repos'][$key]['created'] = htmlentities(strtotime($repo['created_at']), ENT_QUOTES);
-        $reposP['repos'][$key]['pushed'] = htmlentities(strtotime($repo['pushed_at']), ENT_QUOTES);
-        $reposP['repos'][$key]['stars'] = htmlentities($repo['stargazers_count'], ENT_QUOTES);
-        $langs = apiGet('repos/' . $repo['full_name'] . '/languages');
-        foreach($langs as $lang=>$amt) {
-            $reposP['repos'][$key]['languages'][] = htmlentities($lang, ENT_QUOTES);
+    function appendRepoToOutput(&$output, $key, $repo) {
+        global $api;
+        $output['repos'][$key]['name'] = htmlentities($repo['name'], ENT_QUOTES);
+        $output['repos'][$key]['fullName'] = htmlentities($repo['full_name'], ENT_QUOTES);
+        $output['repos'][$key]['description'] = !empty($repo['description']) ? htmlentities($repo['description'], ENT_QUOTES) : null;
+        $output['repos'][$key]['created'] = htmlentities(strtotime($repo['created_at']), ENT_QUOTES);
+        $output['repos'][$key]['pushed'] = htmlentities(strtotime($repo['pushed_at']), ENT_QUOTES);
+        $output['repos'][$key]['stars'] = htmlentities($repo['stargazers_count'], ENT_QUOTES);
+        foreach(apiGet($api, "repos/{$repo['full_name']}/languages") as $lang=>$c) {
+            $output['repos'][$key]['languages'][] = htmlentities($lang, ENT_QUOTES);
         }
     }
 
-    $reposP['updated'] = time();
+    foreach(apiGet($api, "users/{$user}/orgs") as $org) {
+        array_push($orgs, $org['login']);
+    }
 
-    $json = json_encode($reposP);
+    foreach(apiGet($api, "users/{$user}/repos") as $key=>$repo) {
+        appendRepoToOutput($output, $key, $repo);
+    }
 
-    $file = fopen("repos.json", "w");
+    foreach($orgs as $org) {
+        foreach(apiGet($api, "orgs/{$org}/repos") as $key=>$repo) {
+            appendRepoToOutput($output, $key, $repo);
+        }
+    }
+
+    $output['time'] = time();
+
+    print_r($output);
+
+    $json = json_encode($output);
+
+    $file = fopen(__DIR__ . '/repos.json', 'w');
     fwrite($file, $json);
