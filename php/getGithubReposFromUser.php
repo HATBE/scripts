@@ -1,6 +1,4 @@
 <?php
-    require_once(__DIR__ . '/../../config/auth.php');
-
     $user = '<user>';
     define('GITHUB_USER', '<user>');
     define('GITHUB_TOKEN', '<token>');
