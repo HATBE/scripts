@@ -123,5 +123,5 @@
 
     $json = json_encode($finalOutput);
 
-    $file = fopen(__DIR__ . '/../data/repos.json', 'w');
+    $file = fopen(__DIR__ . '/repos.json', 'w');
     fwrite($file, $json);
